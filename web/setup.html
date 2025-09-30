@@ -335,12 +335,19 @@
             </div>
 
             <p style="margin: 20px 0; text-align: center; color: #666;">
-                El sistema está listo para comenzar el monitoreo del chat seleccionado.
+                La configuración ha sido guardada. Para activar completamente el monitoreo, 
+                haz clic en "Activar Monitoreo" para recargar la conexión con Telegram.
             </p>
 
-            <button type="button" class="btn" onclick="goToDashboard()">
-                🚀 Ir al Dashboard
-            </button>
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <button type="button" class="btn" onclick="reloadConfiguration()" style="background: #4CAF50; border-color: #4CAF50;">
+                    🔄 Activar Monitoreo
+                </button>
+                
+                <button type="button" class="btn" onclick="goToDashboard()">
+                    🚀 Ir al Dashboard
+                </button>
+            </div>
         </div>
 
         <!-- Loading general -->
@@ -578,6 +585,44 @@
         
         function goToDashboard() {
             window.location.href = '/';
+        }
+        
+        async function reloadConfiguration() {
+            showLoading(true, '🔄 Activando monitoreo...');
+            
+            try {
+                console.log('🔄 Enviando solicitud de recarga de configuración...');
+                
+                const response = await fetch('/api/reload-config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📥 Respuesta recibida:', response.status);
+                const result = await response.json();
+                console.log('📋 Resultado:', result);
+                
+                if (result.success) {
+                    showAlert('✅ ' + result.message, 'success');
+                    
+                    // Actualizar el texto del botón para indicar que está activado
+                    const reloadBtn = document.querySelector('button[onclick="reloadConfiguration()"]');
+                    if (reloadBtn) {
+                        reloadBtn.innerHTML = '✅ Monitoreo Activado';
+                        reloadBtn.style.background = '#4CAF50';
+                        reloadBtn.disabled = true;
+                    }
+                } else {
+                    showAlert(`❌ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error en reloadConfiguration:', error);
+                showAlert(`❌ Error al activar monitoreo: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
         }
         
         function skipToChats() {

@@ -256,8 +256,22 @@
                     </div>
                 </div>
                 <p id="lastCheck">Última verificación: -</p>
+                
+                <!-- Selector de Chat -->
+                <div class="chat-selector" id="chatSelectorContainer" style="margin: 15px 0; padding: 15px; background: #f8f9ff; border-radius: 8px; border: 2px solid #e0e4e7;">
+                    <label for="chatSelector" style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">
+                        📱 Seleccionar Chat a Monitorear:
+                    </label>
+                    <select id="chatSelector" style="width: 100%; padding: 10px; border: 2px solid #e0e4e7; border-radius: 6px; font-size: 14px; background: white;">
+                        <option value="">🔄 Cargando chats disponibles...</option>
+                    </select>
+                    <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                        Selecciona el chat que deseas monitorear antes de iniciar
+                    </p>
+                </div>
+                
                 <div class="controls">
-                    <button class="btn btn-start" id="startBtn" onclick="startMonitoring()">▶️ Iniciar</button>
+                    <button class="btn btn-start" id="startBtn" onclick="startMonitoring()" disabled>▶️ Iniciar</button>
                     <button class="btn btn-stop" id="stopBtn" onclick="stopMonitoring()">⏹️ Detener</button>
                 </div>
             </div>
@@ -288,7 +302,9 @@
         // Inicializar dashboard
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
+            loadAvailableChats();
             setupAutoRefresh();
+            setupChatSelector();
         });
 
         // Configurar auto-refresh
@@ -442,18 +458,89 @@
             }
         }
 
+        // Cargar chats disponibles
+        async function loadAvailableChats() {
+            try {
+                console.log('🔄 Cargando chats disponibles...');
+                const response = await fetch('/api/chats');
+                const result = await response.json();
+                
+                const selector = document.getElementById('chatSelector');
+                
+                if (result.success && result.chats && result.chats.length > 0) {
+                    // Limpiar opciones existentes
+                    selector.innerHTML = '<option value="">📱 Selecciona un chat...</option>';
+                    
+                    // Agregar chats disponibles
+                    result.chats.forEach(chat => {
+                        const option = document.createElement('option');
+                        option.value = chat.id;
+                        option.textContent = `${chat.type === 'chat' ? '🏟️' : '👤'} ${chat.title}`;
+                        selector.appendChild(option);
+                    });
+                    
+                    console.log(`✅ Cargados ${result.chats.length} chats disponibles`);
+                } else {
+                    selector.innerHTML = '<option value="">❌ Error cargando chats</option>';
+                    console.error('❌ Error cargando chats:', result.message || 'Respuesta inválida');
+                }
+            } catch (error) {
+                console.error('❌ Error cargando chats:', error);
+                document.getElementById('chatSelector').innerHTML = '<option value="">❌ Error de conexión</option>';
+            }
+        }
+
+        // Configurar selector de chat
+        function setupChatSelector() {
+            const selector = document.getElementById('chatSelector');
+            const startBtn = document.getElementById('startBtn');
+            
+            selector.addEventListener('change', function() {
+                // Habilitar/deshabilitar botón de inicio según la selección
+                startBtn.disabled = !this.value;
+                
+                if (this.value) {
+                    console.log(`📱 Chat seleccionado: ${this.options[this.selectedIndex].text} (ID: ${this.value})`);
+                }
+            });
+        }
+
         // Iniciar monitoreo
         async function startMonitoring() {
             try {
-                const response = await fetch('/api/start', { method: 'POST' });
+                const chatSelector = document.getElementById('chatSelector');
+                const selectedChat = chatSelector.value;
+                
+                if (!selectedChat) {
+                    alert('Por favor selecciona un chat antes de iniciar el monitoreo');
+                    return;
+                }
+                
+                console.log('🚀 Iniciando monitoreo para chat:', selectedChat);
+                
+                const response = await fetch('/api/start', { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        target_chat: selectedChat
+                    })
+                });
+                
                 const result = await response.json();
                 
                 if (result.success) {
+                    console.log('✅ Monitor iniciado correctamente');
                     loadStatus(); // Actualizar estado inmediatamente
+                    
+                    // Deshabilitar selector mientras está monitoreando
+                    chatSelector.disabled = true;
                 } else {
                     alert('Error: ' + result.message);
                 }
             } catch (error) {
+                console.error('❌ Error iniciando monitor:', error);
                 alert('Error iniciando monitor: ' + error.message);
             }
         }
@@ -465,11 +552,17 @@
                 const result = await response.json();
                 
                 if (result.success) {
+                    console.log('⏹️ Monitor detenido');
                     loadStatus(); // Actualizar estado inmediatamente
+                    
+                    // Rehabilitar selector cuando se detiene
+                    const chatSelector = document.getElementById('chatSelector');
+                    chatSelector.disabled = false;
                 } else {
                     alert('Error: ' + result.message);
                 }
             } catch (error) {
+                console.error('❌ Error deteniendo monitor:', error);
                 alert('Error deteniendo monitor: ' + error.message);
             }
         }

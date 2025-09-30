@@ -1,6 +1,20 @@
 #!/usr/bin/env python3
 """
-🌐 Telegram Monitor - Servidor Web
+🌐 Tedef check_configuration():
+    """Verificar si la configuración básica está completa"""
+    env_file = Path('.env')
+    if not env_file.exists():
+        return False, "missing_env", "Archivo .env no existe"
+    
+    load_dotenv()
+    # Solo requerimos credenciales, TARGET_CHAT ahora es opcional (selección dinámica)
+    required_vars = ['TG_APP_ID', 'TG_API_HASH', 'TG_PHONE']
+    
+    for var in required_vars:
+        if not os.getenv(var):
+            return False, "needs_setup", f"Variable {var} no está configurada"
+    
+    return True, "configured", "Configuración de credenciales completa" - Servidor Web
 Interfaz web para visualizar y controlar el monitoreo de Telegram
 Basado en el monitor simple que ya funciona correctamente
 """
@@ -123,15 +137,26 @@ def authenticate_telegram_mcp(api_id, api_hash, phone):
 class WebTelegramMonitor(SimpleTelegramMonitor):
     """Extensión del monitor simple para uso con interfaz web"""
     
-    def __init__(self):
+    def __init__(self, target_chat=None):
+        # Si no se proporciona target_chat, intentar obtenerlo del .env (retrocompatibilidad)
+        if target_chat is None:
+            load_dotenv()
+            target_chat = os.getenv('TARGET_CHAT')
+        
+        # Establecer temporalmente TARGET_CHAT para SimpleTelegramMonitor
+        if target_chat:
+            os.environ['TARGET_CHAT'] = target_chat
+            
         super().__init__()
+        self.target_chat = target_chat
         self.latest_messages = []
         self.latest_urls = []
         self.stats = {
             'total_messages': 0,
             'total_urls': 0,
             'last_check': None,
-            'status': 'stopped'
+            'status': 'stopped',
+            'target_chat': target_chat
         }
     
     def process_messages(self, messages):
@@ -223,14 +248,21 @@ def get_urls():
 
 @app.route('/api/start', methods=['POST'])
 def start_monitoring():
-    """Iniciar el monitoreo"""
+    """Iniciar el monitoreo con chat seleccionado dinámicamente"""
     global monitor, monitor_thread, monitor_running
     
     if monitor_running:
         return jsonify({'success': False, 'message': 'Monitor ya está corriendo'})
     
     try:
-        # Verificar configuración completa
+        # Obtener chat seleccionado del request
+        data = request.json or {}
+        target_chat = data.get('target_chat')
+        
+        if not target_chat:
+            return jsonify({'success': False, 'message': 'Debes seleccionar un chat para monitorear'})
+        
+        # Verificar configuración básica (credenciales)
         is_configured, status, message = check_configuration()
         if status != "configured":
             return jsonify({'success': False, 'message': f'Configuración incompleta: {message}'})
@@ -240,14 +272,16 @@ def start_monitoring():
         if not auth_success:
             return jsonify({'success': False, 'message': f'Error de autenticación MCP: {auth_message}'})
         
-        monitor = WebTelegramMonitor()
+        # Crear monitor con el chat seleccionado dinámicamente
+        monitor = WebTelegramMonitor(target_chat=target_chat)
         monitor_running = True
         
         monitor_thread = threading.Thread(target=monitor.start_monitoring_web)
         monitor_thread.daemon = True
         monitor_thread.start()
         
-        return jsonify({'success': True, 'message': 'Monitor iniciado correctamente'})
+        logger.info(f"🚀 Monitor iniciado para chat: {target_chat}")
+        return jsonify({'success': True, 'message': f'Monitor iniciado para el chat seleccionado'})
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error: {e}'})
 
@@ -262,6 +296,56 @@ def stop_monitoring():
         monitor.stats['status'] = 'stopped'
     
     return jsonify({'success': True, 'message': 'Monitor detenido'})
+
+@app.route('/api/reload-config', methods=['POST'])
+def reload_config():
+    """Recargar configuración y reautenticar MCP después del setup"""
+    try:
+        logger.info("🔄 Recargando configuración...")
+        
+        # Verificar que existe el archivo .env
+        if not os.path.exists('.env'):
+            return jsonify({
+                'success': False, 
+                'message': 'No se encontró el archivo .env. Completa el setup primero.'
+            })
+        
+        # Recargar variables de entorno
+        from dotenv import load_dotenv
+        load_dotenv(override=True)
+        logger.info("📋 Variables de entorno recargadas")
+        
+        # Verificar que tenemos las credenciales necesarias
+        has_creds, api_id, api_hash, phone = check_credentials_only()
+        if not has_creds:
+            return jsonify({
+                'success': False, 
+                'message': 'Credenciales incompletas en .env'
+            })
+        
+        # Reautenticar MCP con las nuevas credenciales
+        logger.info("🔐 Reautenticando MCP...")
+        success, message = authenticate_telegram_mcp(api_id, api_hash, phone)
+        
+        if success:
+            logger.info("✅ Configuración recargada y MCP reautenticado correctamente")
+            return jsonify({
+                'success': True, 
+                'message': 'Configuración recargada correctamente. El monitoreo está listo para usar.'
+            })
+        else:
+            logger.error(f"❌ Error en reautenticación MCP: {message}")
+            return jsonify({
+                'success': False, 
+                'message': f'Error al reautenticar MCP: {message}'
+            })
+            
+    except Exception as e:
+        logger.error(f"❌ Error al recargar configuración: {e}")
+        return jsonify({
+            'success': False, 
+            'message': f'Error al recargar configuración: {str(e)}'
+        })
 
 # Rutas de configuración
 @app.route('/api/setup/verify-credentials', methods=['POST'])
@@ -344,20 +428,50 @@ def get_chats():
             'message': f'Error al obtener chats: {str(e)}'
         })
 
-@app.route('/api/setup/save-config', methods=['POST'])
-def save_config():
-    """Guardar configuración en archivo .env"""
+@app.route('/api/chats')
+def get_available_chats():
+    """Obtener lista de chats disponibles para el dashboard"""
     try:
-        data = request.json
-        target_chat = data.get('target_chat')
+        # Verificar si tenemos credenciales
+        has_creds, api_id, api_hash, phone = check_credentials_only()
         
-        logger.info(f"💾 Guardando configuración - Target Chat: {target_chat}")
-        
-        if not target_chat:
+        if not has_creds:
             return jsonify({
                 'success': False,
-                'message': 'Chat objetivo es requerido'
+                'message': 'No hay credenciales configuradas. Completa el setup primero.'
             })
+        
+        # Asegurar autenticación MCP
+        auth_success, auth_message = ensure_mcp_authentication()
+        if not auth_success:
+            return jsonify({
+                'success': False,
+                'message': f'Error de autenticación MCP: {auth_message}'
+            })
+        
+        # Crear monitor temporal para obtener chats
+        temp_monitor = SimpleTelegramMonitor(api_id, api_hash)
+        
+        # Obtener lista de chats
+        chats = temp_monitor.get_available_chats()
+        
+        return jsonify({
+            'success': True,
+            'chats': chats
+        })
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo chats para dashboard: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error al obtener chats: {str(e)}'
+        })
+
+@app.route('/api/setup/save-config', methods=['POST'])
+def save_config():
+    """Guardar credenciales básicas en archivo .env (sin TARGET_CHAT para flexibilidad)"""
+    try:
+        logger.info("💾 Guardando credenciales en .env (sin TARGET_CHAT)")
         
         # Crear archivo .env con la configuración
         env_file = Path('.env')
@@ -391,7 +505,7 @@ def save_config():
                 'message': f'Faltan credenciales requeridas: {", ".join(missing)}'
             })
         
-        # Crear contenido del .env
+        # Crear contenido del .env (SIN TARGET_CHAT para selección dinámica)
         env_content = f"""# 🔐 Variables de entorno para Telegram Monitor Agent
 # Generado automáticamente por la configuración web
 
@@ -399,9 +513,6 @@ def save_config():
 TG_APP_ID={api_id}
 TG_API_HASH={api_hash}
 TG_PHONE={phone}
-
-# Chat objetivo para monitorear
-TARGET_CHAT={target_chat}
 
 # Configuración opcional
 MONITORING_INTERVAL=60
@@ -414,17 +525,19 @@ DB_PATH=data/posts.db
 FLASK_HOST=localhost
 FLASK_PORT=5000
 FLASK_DEBUG=true
+
+# Nota: TARGET_CHAT se selecciona dinámicamente en el dashboard
 """
         
         # Escribir archivo .env
         with open(env_file, 'w', encoding='utf-8') as f:
             f.write(env_content)
         
-        logger.info(f"✅ Configuración guardada en {env_file} - Chat: {target_chat}")
+        logger.info(f"✅ Credenciales guardadas en {env_file} - TARGET_CHAT será selección dinámica")
         
         return jsonify({
             'success': True,
-            'message': 'Configuración guardada correctamente'
+            'message': 'Credenciales guardadas correctamente'
         })
         
     except Exception as e:
@@ -442,18 +555,12 @@ def setup():
     
     setup_data = {
         'has_credentials': has_creds,
-        'needs_target_chat': False
+        'needs_target_chat': False  # Ya no necesitamos TARGET_CHAT en .env
     }
     
     if has_creds:
-        # Tenemos credenciales, solo necesitamos TARGET_CHAT
-        load_dotenv()
-        target_chat = os.getenv('TARGET_CHAT')
-        if not target_chat:
-            setup_data['needs_target_chat'] = True
-        else:
-            # Tenemos todo, redirigir al dashboard
-            return redirect(url_for('index'))
+        # Tenemos credenciales, redirigir al dashboard donde se seleccionará el chat dinámicamente
+        return redirect(url_for('index'))
     
     return render_template('setup.html', **setup_data)
 
