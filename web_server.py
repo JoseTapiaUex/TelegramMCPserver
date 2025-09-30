@@ -1,20 +1,6 @@
 #!/usr/bin/env python3
 """
-🌐 Tedef check_configuration():
-    """Verificar si la configuración básica está completa"""
-    env_file = Path('.env')
-    if not env_file.exists():
-        return False, "missing_env", "Archivo .env no existe"
-    
-    load_dotenv()
-    # Solo requerimos credenciales, TARGET_CHAT ahora es opcional (selección dinámica)
-    required_vars = ['TG_APP_ID', 'TG_API_HASH', 'TG_PHONE']
-    
-    for var in required_vars:
-        if not os.getenv(var):
-            return False, "needs_setup", f"Variable {var} no está configurada"
-    
-    return True, "configured", "Configuración de credenciales completa" - Servidor Web
+🌐 Telegram Monitor - Servidor Web
 Interfaz web para visualizar y controlar el monitoreo de Telegram
 Basado en el monitor simple que ya funciona correctamente
 """
@@ -45,21 +31,21 @@ monitor = None
 monitor_thread = None
 monitor_running = False
 
-# Función para verificar configuración
 def check_configuration():
-    """Verificar si la configuración está completa"""
+    """Verificar si la configuración básica está completa"""
     env_file = Path('.env')
     if not env_file.exists():
-        return False, "needs_setup", "Archivo .env no existe"
+        return False, "missing_env", "Archivo .env no existe"
     
     load_dotenv()
-    required_vars = ['TG_APP_ID', 'TG_API_HASH', 'TG_PHONE', 'TARGET_CHAT']
+    # Solo requerimos credenciales, TARGET_CHAT ahora es opcional (selección dinámica)
+    required_vars = ['TG_APP_ID', 'TG_API_HASH', 'TG_PHONE']
     
     for var in required_vars:
         if not os.getenv(var):
             return False, "needs_setup", f"Variable {var} no está configurada"
     
-    return True, "configured", "Configuración completa"
+    return True, "configured", "Configuración de credenciales completa"
 
 def check_credentials_only():
     """Verificar solo si tenemos credenciales (sin TARGET_CHAT)"""
@@ -568,14 +554,14 @@ def setup():
 @app.route('/')
 def index():
     """Página principal"""
-    # Verificar configuración
+    # Verificar configuración básica (solo credenciales)
     is_configured, status, message = check_configuration()
     
     if status == "needs_setup":
-        # Faltan credenciales o TARGET_CHAT - ir a setup
+        # Faltan credenciales básicas - ir a setup
         return redirect(url_for('setup'))
     elif status == "configured":
-        # Tenemos configuración completa - asegurar autenticación MCP
+        # Tenemos credenciales básicas - mostrar dashboard con selector de chat
         auth_success, auth_message = ensure_mcp_authentication()
         if not auth_success:
             logger.warning(f"⚠️ Error de autenticación MCP: {auth_message}")

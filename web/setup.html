@@ -296,38 +296,10 @@
             {% endif %}
         </div>
 
-        <!-- Paso 2: Selección de Chat -->
+        <!-- Paso 2: Selección de Chat se omite - se hace dinámicamente en el dashboard -->
+
+        <!-- Paso 2: Configuración Completada -->
         <div class="step hidden" id="step2">
-            <h3>💬 Paso 2: Seleccionar Chat a Monitorizar</h3>
-            
-            <div class="alert alert-success">
-                <strong>✅ Credenciales verificadas correctamente!</strong> 
-                Ahora selecciona el chat que quieres monitorizar.
-            </div>
-
-            <div class="loading" id="loadingChats">
-                <div class="spinner"></div>
-                <p>Cargando tus chats disponibles...</p>
-            </div>
-
-            <div id="chatSelection" class="hidden">
-                <div class="form-group">
-                    <label>Selecciona un chat:</label>
-                    <div class="chat-list" id="chatList">
-                        <!-- Los chats se cargarán dinámicamente -->
-                    </div>
-                </div>
-
-                <input type="hidden" id="selectedChat" name="selectedChat">
-                
-                <button type="button" class="btn" onclick="saveConfiguration()">
-                    💾 Guardar Configuración
-                </button>
-            </div>
-        </div>
-
-        <!-- Paso 3: Configuración Completada -->
-        <div class="step hidden" id="step3">
             <h3>🎉 ¡Configuración Completada!</h3>
             
             <div class="alert alert-success">
@@ -335,17 +307,13 @@
             </div>
 
             <p style="margin: 20px 0; text-align: center; color: #666;">
-                La configuración ha sido guardada. Para activar completamente el monitoreo, 
-                haz clic en "Activar Monitoreo" para recargar la conexión con Telegram.
+                Las credenciales han sido guardadas. En el dashboard podrás seleccionar 
+                el chat que quieres monitorizar y activar el seguimiento.
             </p>
 
-            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                <button type="button" class="btn" onclick="reloadConfiguration()" style="background: #4CAF50; border-color: #4CAF50;">
-                    🔄 Activar Monitoreo
-                </button>
-                
-                <button type="button" class="btn" onclick="goToDashboard()">
-                    🚀 Ir al Dashboard
+            <div style="display: flex; justify-content: center;">
+                <button type="button" class="btn" onclick="goToDashboard()" style="background: #4CAF50; border-color: #4CAF50;">
+                    � Activar Dashboard
                 </button>
             </div>
         </div>
@@ -420,14 +388,8 @@
                 if (result.success) {
                     showAlert('✅ Credenciales verificadas y autenticación MCP exitosa', 'success');
                     
-                    // Pasar al siguiente paso
-                    document.getElementById('step1').classList.add('completed');
-                    document.getElementById('step1').classList.remove('active');
-                    document.getElementById('step2').classList.remove('hidden');
-                    document.getElementById('step2').classList.add('active');
-                    
-                    // Cargar chats
-                    loadChats();
+                    // Guardar configuración y pasar directamente al paso final
+                    await saveConfiguration();
                 } else {
                     showAlert(`❌ Error: ${result.message}`, 'error');
                     
@@ -443,110 +405,13 @@
             }
         }
         
-        async function loadChats() {
-            const loadingChats = document.getElementById('loadingChats');
-            const chatSelection = document.getElementById('chatSelection');
+        // Funciones de chat eliminadas - la selección se hace dinámicamente en el dashboard
             
-            loadingChats.style.display = 'block';
-            chatSelection.classList.add('hidden');
-            
-            try {
-                const response = await fetch('/api/setup/get-chats');
-                const result = await response.json();
-                
-                if (result.success) {
-                    displayChats(result.chats);
-                    loadingChats.style.display = 'none';
-                    chatSelection.classList.remove('hidden');
-                } else {
-                    showAlert(`❌ Error al cargar chats: ${result.message}`, 'error');
-                }
-            } catch (error) {
-                showAlert(`❌ Error al cargar chats: ${error.message}`, 'error');
-            }
-        }
-        
-        function displayChats(chats) {
-            console.log('📋 displayChats() - Mostrando', chats.length, 'chats');
-            const chatList = document.getElementById('chatList');
-            chatList.innerHTML = '';
-            
-            chats.forEach((chat, index) => {
-                console.log(`📝 Creando chat ${index + 1}:`, chat);
-                const chatItem = document.createElement('div');
-                chatItem.className = 'chat-item';
-                
-                // Agregar datos del chat como atributos
-                chatItem.setAttribute('data-chat-id', chat.id);
-                chatItem.setAttribute('data-chat-title', chat.title || chat.first_name || 'Chat sin nombre');
-                
-                chatItem.innerHTML = `
-                    <h4>${chat.title || chat.first_name || 'Chat sin nombre'}</h4>
-                    <p>ID: ${chat.id} | Tipo: ${chat.type}</p>
-                    ${chat.username ? `<p>@${chat.username}</p>` : ''}
-                `;
-                
-                // Usar addEventListener en lugar de onclick
-                chatItem.addEventListener('click', function(event) {
-                    event.preventDefault();
-                    const chatId = this.getAttribute('data-chat-id');
-                    const chatTitle = this.getAttribute('data-chat-title');
-                    console.log('🖱️ Click detectado - Chat ID:', chatId, 'Título:', chatTitle);
-                    selectChat(chatId, this);
-                });
-                
-                chatList.appendChild(chatItem);
-                console.log(`✅ Chat ${index + 1} añadido con ID:`, chat.id);
-            });
-            
-            console.log('✅ Todos los chats añadidos al DOM');
-        }
-        
-        function selectChat(chatId, element) {
-            console.log('🎯 selectChat() llamada - chatId:', chatId, 'element:', element);
-            console.log('🔍 Tipo de chatId:', typeof chatId, 'Valor:', chatId);
-            
-            if (!chatId) {
-                console.error('❌ chatId es null o undefined');
-                showAlert('❌ Error: ID de chat inválido', 'error');
-                return;
-            }
-            
-            // Remover selección anterior
-            document.querySelectorAll('.chat-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-            
-            // Seleccionar nuevo chat
-            element.classList.add('selected');
-            selectedChatId = chatId;
-            
-            // También actualizar el input hidden
-            const hiddenInput = document.getElementById('selectedChat');
-            if (hiddenInput) {
-                hiddenInput.value = chatId;
-                console.log('📝 Hidden input actualizado:', hiddenInput.value);
-            }
-            
-            console.log('✅ Chat seleccionado correctamente');
-            console.log('📊 selectedChatId final:', selectedChatId);
-            console.log('📊 Tipo de selectedChatId:', typeof selectedChatId);
-            
-            const chatTitle = element.getAttribute('data-chat-title') || 'Chat sin nombre';
-            showAlert(`✅ Chat seleccionado: ${chatTitle} (ID: ${chatId})`, 'success');
-        }
-        
+        // Configuración simplificada - se guardará solo las credenciales
         async function saveConfiguration() {
-            console.log('🔍 saveConfiguration() llamada - selectedChatId:', selectedChatId);
-            
-            if (!selectedChatId) {
-                showAlert('❌ Por favor selecciona un chat', 'error');
-                console.log('❌ No hay chat seleccionado');
-                return;
-            }
+            console.log('� Guardando configuración de credenciales...');
             
             showLoading(true, 'Guardando configuración...');
-            showAlert(`💾 Guardando chat seleccionado: ${selectedChatId}`, 'info');
             
             try {
                 console.log('📤 Enviando petición a /api/setup/save-config');
@@ -556,7 +421,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        target_chat: selectedChatId
+                        // Solo guardamos las credenciales, no target_chat
                     })
                 });
                 
@@ -567,11 +432,11 @@
                 if (result.success) {
                     showAlert('✅ Configuración guardada correctamente', 'success');
                     
-                    // Pasar al último paso
-                    document.getElementById('step2').classList.add('completed');
-                    document.getElementById('step2').classList.remove('active');
-                    document.getElementById('step3').classList.remove('hidden');
-                    document.getElementById('step3').classList.add('active');
+                    // Ir directamente al último paso
+                    document.getElementById('step1').classList.add('completed');
+                    document.getElementById('step1').classList.remove('active');
+                    document.getElementById('step2').classList.remove('hidden');
+                    document.getElementById('step2').classList.add('active');
                 } else {
                     showAlert(`❌ Error: ${result.message}`, 'error');
                 }
@@ -626,17 +491,14 @@
         }
         
         function skipToChats() {
-            // Saltar directamente al paso 2 cuando ya tenemos credenciales
-            showAlert('🔐 Autenticando MCP con credenciales existentes...', 'info');
+            // Saltar directamente al paso final cuando ya tenemos credenciales
+            showAlert('🔐 Configuración encontrada. Activando dashboard...', 'info');
             
-            // Pasar al siguiente paso
+            // Ir directamente al paso final
             document.getElementById('step1').classList.add('completed');
             document.getElementById('step1').classList.remove('active');
             document.getElementById('step2').classList.remove('hidden');
             document.getElementById('step2').classList.add('active');
-            
-            // Cargar chats usando credenciales existentes
-            loadChats();
         }
         
         // Inicializar página
