@@ -152,7 +152,26 @@ El sistema ha detectado exitosamente URLs de:
 - **HTML5/CSS3/JS**: Frontend moderno
 - **NPX**: Ejecución del servidor MCP
 
-## 📝 Logs y Monitoreo
+## � Seguridad
+
+### Variables de Entorno Protegidas
+- **`.env`** está en `.gitignore` - NUNCA se sube al repositorio
+- Usa **`.env.example`** como plantilla
+- Credenciales solo en tu máquina local
+
+### Configuración Recomendada
+```bash
+# Configurar .env
+cp .env.example .env
+# Editar .env con TUS credenciales
+```
+
+### ⚠️ IMPORTANTE
+- **NUNCA subas credenciales al repositorio**
+- **TARGET_CHAT** ahora es opcional (selección dinámica)
+- Regenera credenciales si se comprometen
+
+## �📝 Logs y Monitoreo
 
 - Logs guardados en `telegram_monitor.log`
 - Formato timestamp con nivel de log
