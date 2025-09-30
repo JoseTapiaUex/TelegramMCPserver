@@ -1,92 +1,166 @@
 # 🤖 Telegram Monitor - Agente de Monitoreo Inteligente
 
 > **Proyecto desarrollado para curso de Programación Asistido por IA**  
-> Monitor automático de grupos de Telegram con detección de URLs y análisis de contenido
+> Monitor automático de chats de Telegram con detección de## 📊 Estructura de Datos
 
-## 🎯 Características
+### 📁 Archivos Generados
+```
+results/
+├── message_YYYYMMDD_HHMMSS_*.json    # Mensajes capturados
+└── url_YYYYMMDD_HHMMSS_*.json        # URLs con metadata
+```
 
-- ✅ **Monitoreo en tiempo real** del grupo "test-ia-agents"
+### 📄 Formato de Datos
+```json
+// Ejemplo de mensaje capturado
+{
+  "message_id": 12345,
+  "text": "Contenido del mensaje", 
+  "from_user": "usuario",
+  "timestamp": "2025-10-01T01:35:07.965000",
+  "chat": "nombre_del_chat"
+}
+```
+
+## 🛠️ Stack Tecnológico
+
+- **🐍 Backend**: Python 3.8+ + Flask
+- **🌐 Frontend**: HTML5, CSS3, JavaScript
+- **📡 Protocolo**: MCP (Model Context Protocol)
+- **🔄 APIs**: JSON-RPC 2.0 
+- **💾 Datos**: JSON local + logs estructurados
+
+## 📝 Logs y Diagnósticos
+
+- **Logs detallados**: `telegram_monitor.log`
+- **Formato estructurado**: Timestamp + nivel + mensaje
+- **Encoding UTF-8**: Soporte completo caracteres especiales
+- **Rotación automática**: Gestión eficiente de archivos
+
+## 🎉 Estado del Proyecto
+
+### ✅ **COMPLETADO Y FUNCIONAL**
+- 🎛️ **Setup UX optimizado**: Flujo simplificado primer uso
+- 📊 **Dashboard completo**: Interfaz moderna y responsive
+- 🔄 **Monitoreo dinámico**: Selección multi-chat en tiempo real  
+- 🔗 **Detección avanzada**: URLs con metadata completo
+- 💾 **Persistencia robusta**: Datos JSON + logs estructurados
+- 🔒 **Seguridad implementada**: Credenciales protegidas
+
+### 🚀 **Casos de Uso Validados**
+- Monitoreo de grupos de Telegram en tiempo real
+- Detección automática de URLs compartidas
+- Dashboard interactivo para control y visualización
+- Setup seguro y amigable para nuevos usuarios
+
+---
+
+*💡 Desarrollado con ❤️ para el curso de **Programación Asistido por IA***
+
+🎯 **Demo funcional**: `python run.py --web` → http://localhost:5000 contenido
+
+## 🎯 Características Principales
+
+- ✅ **Monitoreo en tiempo real** de cualquier chat de Telegram
 - 🔗 **Detección automática de URLs** en mensajes
 - 💾 **Guardado local** de mensajes y URLs en formato JSON
-- 🌐 **Interfaz web moderna** para visualización y control
+- 🌐 **Interfaz web moderna** con dashboard interactivo
 - 🚀 **Arquitectura MCP** (Model Context Protocol) con Telegram
-- 📊 **Dashboard en tiempo real** con estadísticas
+- 📊 **Estadísticas en tiempo real** y métricas de actividad
+- 🎯 **Selección dinámica de chats** - sin configuración previa
+- 🔒 **Setup seguro** con flujo UX optimizado
 
-## 🏗️ Arquitectura
+## 🏗️ Arquitectura del Sistema
 
 ```
 telegram-monitor-agent/
-├── simple_monitor.py          # ✅ Monitor principal (CLI)
-├── web_server.py             # 🌐 Servidor web con Flask  
+├── run.py                    # 🚀 Punto de entrada principal
+├── simple_monitor.py         # ⚙️ Lógica de monitoreo
+├── web_server.py            # 🌐 Servidor Flask + APIs
 ├── web/
-│   └── index.html           # 📱 Dashboard web moderno
-├── results/                 # 💾 Archivos JSON generados
-├── requirements.txt         # 📦 Dependencias Python
-├── .env                    # 🔑 Configuración (API keys)
-└── README.md              # 📚 Documentación
+│   ├── index.html          # � Dashboard principal
+│   └── setup.html          # ⚙️ Configuración inicial
+├── results/                # 💾 Datos JSON generados
+├── requirements.txt        # 📦 Dependencias Python
+├── .env                   # 🔑 Credenciales (local)
+├── .env.example          # 📋 Plantilla de configuración
+└── README.md            # 📚 Esta documentación
 ```
 
-## 🚀 Instalación Rápida
+## 🚀 Instalación y Configuración
 
 ### 1. Prerrequisitos
-```bash
-# Instalar Node.js (para MCP server)
-# Instalar Python 3.8+
-```
+- **Python 3.8+** instalado
+- **Node.js** (para MCP server de Telegram)
+- Cuenta de Telegram y API keys
 
-### 2. Configurar el proyecto
+### 2. Clonar y configurar
 ```bash
-# Clonar repositorio
+# Clonar el repositorio
 git clone https://github.com/JoseTapiaUex/TelegramMCPserver.git
 cd TelegramMCPserver/telegram-monitor-agent
 
-# Instalar dependencias Python
+# Crear entorno virtual (recomendado)
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# Linux/Mac:
+source .venv/bin/activate
+
+# Instalar dependencias
 pip install -r requirements.txt
 
 # Instalar MCP server de Telegram
 npm install -g @chaindead/telegram-mcp
 ```
 
-### 3. Configurar credenciales
+1. Ve a https://my.telegram.org/apps
+2. Inicia sesión con tu cuenta de Telegram  
+3. Crea una nueva aplicación
+4. Anota tu `API ID` y `API Hash`
 
-Crear archivo `.env` basado en `.env.example`:
+## 💻 Ejecución
+
+### 🌐 Modo Web (Recomendado)
 ```bash
-# Copiar el archivo de ejemplo
-cp .env.example .env
-
-# Editar con tus credenciales reales
-TG_APP_ID=TU_API_ID_AQUI
-TG_API_HASH=TU_API_HASH_AQUI
-TG_PHONE=+34XXXXXXXXX
-TARGET_CHAT=cht[ID_DEL_CHAT]
-MONITORING_INTERVAL=60
+# Iniciar servidor con interfaz web
+python run.py --web
 ```
 
-> ⚠️ **IMPORTANTE**: Obtén tus credenciales en https://my.telegram.org/apps
+**🎯 Primer uso**: El sistema detecta automáticamente si necesitas configuración y te redirige al setup.
 
-## 💻 Uso
+**🚀 Usos posteriores**: Acceso directo al dashboard en `http://localhost:5000`
 
-### Modo CLI (Monitor Simple)
+### ⚡ Modo CLI (Avanzado)  
 ```bash
-# Ejecutar monitor en consola
+# Ejecutar monitor directo en consola
 python simple_monitor.py
 ```
 
-### Modo Web (Dashboard)
-```bash
-# Iniciar servidor web
-python web_server.py
+## 🎮 Flujo de Trabajo
 
-# Acceder al dashboard
-# http://localhost:5000
-```
+### 📋 Configuración Inicial (Solo primer uso)
+1. **Ejecuta**: `python run.py --web`
+2. **Setup automático**: Se abre el navegador en `http://localhost:5000/setup`
+3. **Introduce credenciales**: API ID, API Hash, y número de teléfono
+4. **Verificación**: El sistema autentica con Telegram
+5. **¡Listo!**: Redirige automáticamente al dashboard
 
-## 📊 Funcionalidades del Dashboard
+### 🚀 Uso Normal (Posteriores ejecuciones)
+1. **Ejecuta**: `python run.py --web` 
+2. **Dashboard directo**: Se abre automáticamente en `http://localhost:5000`
+3. **Selecciona chat**: Elige dinámicamente qué chat monitorizar
+4. **Inicia monitoreo**: Un clic para comenzar la captura en tiempo real
 
-- **🎛️ Control del Monitor**: Iniciar/detener monitoreo
-- **📈 Estadísticas en Tiempo Real**: Mensajes procesados, URLs detectadas
-- **💬 Mensajes Recientes**: Últimos mensajes del grupo
-- **🔗 URLs Detectadas**: Lista de enlaces encontrados con metadata
+## 📊 Características del Dashboard
+
+- **🎛️ Control Total**: Iniciar/pausar/detener monitoreo con un clic
+- **📈 Métricas en Vivo**: Contador de mensajes, URLs, y actividad
+- **💬 Feed en Tiempo Real**: Stream de mensajes capturados
+- **🔗 Análisis de URLs**: Lista completa con metadata de enlaces
+- **📊 Estadísticas**: Gráficos de actividad y tendencias
+- **🎯 Multi-chat**: Cambio dinámico entre diferentes chats
+- **💾 Exportación**: Descarga de datos en formato JSON
 - **🔄 Auto-actualización**: Datos actualizados cada 5 segundos
 
 ## 🔧 Configuración Avanzada
