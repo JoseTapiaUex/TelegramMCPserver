@@ -206,31 +206,58 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# ===== TELEGRAM MCP SERVER =====
+# ===== TELEGRAM MCP SERVER - SEGURIDAD =====
+# ⚠️ ARCHIVOS CON CREDENCIALES SENSIBLES - NUNCA SUBIR AL REPO ⚠️
+
 # Archivos de configuración con credenciales
 config/claude_desktop_config.json
+config/claude_config.json
+config/telegram_config.json
 .env
-.env.local
-.env.production
-.env.development
+.env.*
+!.env.example
+env.json
+environment.json
 
-# Archivos de sesión de Telegram
+# Archivos de sesión de Telegram (contienen tokens de autenticación)
 .telegram-mcp/
 session.json
 *.session
-
-# Dependencias de Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+telegram_session/
+auth_session.dat
 
 # Credenciales específicas
 credentials.json
 api_keys.json
 config.local.json
 telegram_credentials.json
+secrets.json
+private_config.json
 
-# Cache de NPX
+# Archivos de backup que pueden contener credenciales
+*_backup.*
+*.backup
+backup/
+
+# Logs que pueden contener información sensible
+*.log
+logs/
+telegram_monitor.log
+
+# Datos procesados que pueden contener información privada
+results/
+data/
+output/
+
+# Dependencias de Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Cache de NPX y NPM
 .npm/
 .npx/
+npm-cache/

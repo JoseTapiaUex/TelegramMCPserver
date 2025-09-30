@@ -1,168 +1,166 @@
-# Telegram MCP Server
+# 🤖 Telegram Monitor - Agente de Monitoreo Inteligente
 
-Servidor MCP (Model Context Protocol) para conectar Claude Desktop con Telegram y poder leer/gestionar mensajes directamente desde Claude.
+> **Proyecto desarrollado para curso de Programación Asistido por IA**  
+> Monitor automático de grupos de Telegram con detección de URLs y análisis de contenido
 
-## 🎯 Objetivo
+## 🎯 Características
 
-Configurar un servidor MCP que permita a Claude Desktop acceder a tus mensajes de Telegram, facilitando la gestión y análisis de conversaciones desde la interfaz de Claude.
+- ✅ **Monitoreo en tiempo real** del grupo "test-ia-agents"
+- 🔗 **Detección automática de URLs** en mensajes
+- 💾 **Guardado local** de mensajes y URLs en formato JSON
+- 🌐 **Interfaz web moderna** para visualización y control
+- 🚀 **Arquitectura MCP** (Model Context Protocol) con Telegram
+- 📊 **Dashboard en tiempo real** con estadísticas
 
-## 📋 Requisitos Previos
-
-- Windows 10/11
-- Node.js instalado
-- Cuenta de Telegram
-- Claude Desktop instalado
-- PowerShell
-
-## 🚀 Guía de Instalación Rápida
-
-### Paso 1: Instalación del Servidor MCP
-
-```powershell
-# Instalar el servidor MCP de Telegram usando NPX
-npx -y @chaindead/telegram-mcp
-```
-
-### Paso 2: Obtener Credenciales de Telegram
-
-1. Ve a [https://my.telegram.org/auth](https://my.telegram.org/auth)
-2. Inicia sesión con tu número de teléfono
-3. Ve a "API development tools"
-4. Crea una nueva aplicación y obtén:
-   - `api_id` (TG_APP_ID)
-   - `api_hash` (TG_API_HASH)
-
-### Paso 3: Autenticación
-
-```powershell
-# Ejecutar el comando de autenticación
-npx -y @chaindead/telegram-mcp auth --app-id TU_API_ID --api-hash TU_API_HASH --phone TU_NUMERO
-```
-
-Sigue las instrucciones para introducir el código que recibirás por Telegram.
-
-### Paso 4: Configurar de Forma Segura
-
-**Opción A: Usando el script automático (Recomendado)**
-
-```powershell
-# Ejecutar el script de configuración segura
-.\scripts\configure-env.ps1
-```
-
-**Opción B: Configuración manual**
-
-1. Copia el archivo de ejemplo: `cp .env.example .env`
-2. Edita `.env` con tus credenciales reales
-3. El archivo de configuración de Claude se actualizará automáticamente
-
-⚠️ **IMPORTANTE**: Las credenciales están protegidas por `.gitignore` y no se subirán al repositorio.
-
-## 🛠️ Funcionalidades Disponibles
-
-El servidor MCP de Telegram proporciona las siguientes herramientas:
-
-- **`tg_me`**: Obtener información de la cuenta actual
-- **`tg_dialogs`**: Listar diálogos/chats (con filtro de no leídos opcional)
-- **`tg_read`**: Marcar diálogo como leído
-- **`tg_dialog`**: Obtener mensajes de un diálogo específico
-- **`tg_send`**: Enviar mensajes a cualquier diálogo
-
-## 💡 Ejemplos de Uso
-
-### Gestión de Mensajes
+## 🏗️ Arquitectura
 
 ```
-"Verifica si tengo mensajes importantes sin leer en Telegram"
-"Resume todos mis mensajes no leídos de Telegram"
-"Lee y analiza mis mensajes no leídos, prepara borradores de respuesta donde sea necesario"
+telegram-monitor-agent/
+├── simple_monitor.py          # ✅ Monitor principal (CLI)
+├── web_server.py             # 🌐 Servidor web con Flask  
+├── web/
+│   └── index.html           # 📱 Dashboard web moderno
+├── results/                 # 💾 Archivos JSON generados
+├── requirements.txt         # 📦 Dependencias Python
+├── .env                    # 🔑 Configuración (API keys)
+└── README.md              # 📚 Documentación
 ```
 
-### Organización
+## 🚀 Instalación Rápida
 
-```
-"Analiza mis diálogos de Telegram y sugiere una estructura de carpetas"
-"Ayúdame a categorizar mis chats de Telegram por importancia"
-"Encuentra todas las conversaciones relacionadas con trabajo"
-```
-
-### Comunicación
-
-```
-"Monitorea un chat específico en busca de actualizaciones sobre [tema]"
-"Redacta una respuesta educada al último mensaje en [chat]"
-"Verifica si hay preguntas sin responder en mis chats"
+### 1. Prerrequisitos
+```bash
+# Instalar Node.js (para MCP server)
+# Instalar Python 3.8+
 ```
 
-## 📁 Estructura del Proyecto
+### 2. Configurar el proyecto
+```bash
+# Clonar repositorio
+git clone https://github.com/JoseTapiaUex/TelegramMCPserver.git
+cd TelegramMCPserver/telegram-monitor-agent
 
+# Instalar dependencias Python
+pip install -r requirements.txt
+
+# Instalar MCP server de Telegram
+npm install -g @chaindead/telegram-mcp
 ```
-TelegramMCPserver/
-├── README.md                 # Este archivo
-├── docs/                    # Documentación
-│   ├── instalacion.md       # Guía de instalación
-│   ├── configuracion.md     # Configuración avanzada
-│   └── ejemplos.md          # Ejemplos de uso
-├── config/                  # Archivos de configuración
-│   └── claude_config_example.json
-└── scripts/                 # Scripts de automatización
-    ├── install.ps1          # Instalación automática
-    └── setup.ps1            # Configuración rápida
+
+### 3. Configurar credenciales
+
+Crear archivo `.env`:
+```bash
+TG_APP_ID=1234567
+TG_API_HASH=abcd1234efgh5678ijkl9012mnop3456
+TARGET_CHAT=cht[4945424696]
+MONITORING_INTERVAL=60
 ```
+
+## 💻 Uso
+
+### Modo CLI (Monitor Simple)
+```bash
+# Ejecutar monitor en consola
+python simple_monitor.py
+```
+
+### Modo Web (Dashboard)
+```bash
+# Iniciar servidor web
+python web_server.py
+
+# Acceder al dashboard
+# http://localhost:5000
+```
+
+## 📊 Funcionalidades del Dashboard
+
+- **🎛️ Control del Monitor**: Iniciar/detener monitoreo
+- **📈 Estadísticas en Tiempo Real**: Mensajes procesados, URLs detectadas
+- **💬 Mensajes Recientes**: Últimos mensajes del grupo
+- **🔗 URLs Detectadas**: Lista de enlaces encontrados con metadata
+- **🔄 Auto-actualización**: Datos actualizados cada 5 segundos
 
 ## 🔧 Configuración Avanzada
 
-### Variables de Entorno
+### Variables de Entorno Disponibles
 
-Puedes configurar las siguientes variables de entorno:
+| Variable | Descripción | Valor por Defecto |
+|----------|-------------|-------------------|
+| `TG_APP_ID` | ID de la aplicación Telegram | `1234567` |
+| `TG_API_HASH` | Hash API de Telegram | `4b525537a...` |
+| `TARGET_CHAT` | ID del chat a monitorear | `cht[4945424696]` |
+| `MONITORING_INTERVAL` | Intervalo en segundos | `60` |
 
-- `TG_APP_ID`: Tu API ID de Telegram
-- `TG_API_HASH`: Tu API Hash de Telegram
-- `TG_SESSION_PATH`: Ruta personalizada para el archivo de sesión
+## 📁 Archivos Generados
 
-### Configuración Personalizada
+### Mensajes (`results/message_*.json`)
+```json
+{
+  "id": "2025-09-30 20:33:15_130587018990476347",
+  "text": "https://x.com/OpenAI/status/1973071069016641829",
+  "date": "2025-09-30 20:33:15",
+  "from": "usuario",
+  "urls": ["https://x.com/OpenAI/status/1973071069016641829"],
+  "chat": "cht[4945424696]"
+}
+```
 
-Para configuraciones más avanzadas, consulta la [documentación de configuración](docs/configuracion.md).
+### URLs (`results/url_*.json`)
+```json
+{
+  "url": "https://x.com/OpenAI/status/1973071069016641829",
+  "found_in_message": "2025-09-30 20:33:15_130587018990476347",
+  "from_user": "usuario",
+  "timestamp": "2025-09-30T20:47:08.679785",
+  "status": "detected"
+}
+```
 
-## 🐛 Solución de Problemas
+## 🎓 Contexto Académico
 
-### Problemas Comunes
+Este proyecto fue desarrollado como parte de un **curso de Programación Asistido por IA**, demostrando:
 
-1. **Error de autenticación**: Verifica que tu API ID y Hash sean correctos
-2. **Claude no ve el servidor**: Reinicia Claude Desktop después de cambiar la configuración
-3. **Problemas de permisos**: Ejecuta PowerShell como administrador
+- **Integración de APIs** (Telegram MCP)
+- **Procesamiento en tiempo real** de datos
+- **Arquitectura web moderna** (Flask + HTML5)
+- **Gestión de estados** y persistencia de datos
+- **Interfaces de usuario** responsivas y funcionales
 
-Para más ayuda, consulta [troubleshooting.md](docs/troubleshooting.md).
+## 🔗 URLs Detectadas en Pruebas
 
-## 📚 Recursos Adicionales
+El sistema ha detectado exitosamente URLs de:
+- 🐦 **X/Twitter**: Posts de OpenAI y otros
+- 📰 **Noticias**: Marca.com, Hoy.es, El País, BBC
+- 💻 **GitHub**: Repositorios y documentación
+- 🎸 **Blogs especializados**: AprendizDeLuthier.com
 
-- [Documentación oficial de MCP](https://modelcontextprotocol.io/)
-- [API de Telegram](https://core.telegram.org/api)
-- [Términos de servicio de Telegram API](https://core.telegram.org/api/terms)
+## 🛠️ Tecnologías Utilizadas
 
-## 🔒 Seguridad
+- **Python 3.8+**: Lenguaje principal
+- **Flask**: Framework web
+- **MCP Protocol**: Comunicación con Telegram
+- **JSON-RPC**: Protocolo de comunicación
+- **HTML5/CSS3/JS**: Frontend moderno
+- **NPX**: Ejecución del servidor MCP
 
-**Credenciales protegidas**: Este proyecto usa `.gitignore` para proteger tus credenciales de Telegram. Nunca se subirán al repositorio.
+## 📝 Logs y Monitoreo
 
-**Archivos sensibles**:
-- `.env` - Variables de entorno locales
-- `config/claude_desktop_config.json` - Configuración con credenciales
-- `.telegram-mcp/` - Archivos de sesión de Telegram
+- Logs guardados en `telegram_monitor.log`
+- Formato timestamp con nivel de log
+- Encoding UTF-8 para caracteres especiales
+- Rotación automática de archivos de resultados
 
-## ⚠️ Importante
+## 🎉 Estado del Proyecto
 
-Asegúrate de haber leído y entendido los [Términos de Servicio de la API de Telegram](https://core.telegram.org/api/terms) antes de usar este servidor. El mal uso de la API de Telegram puede resultar en la suspensión de tu cuenta.
-
-## 🔗 Referencias
-
-- Basado en: [chaindead/telegram-mcp](https://github.com/chaindead/telegram-mcp)
-- Documentación MCP: [modelcontextprotocol.io](https://modelcontextprotocol.io/)
-- API de Telegram: [core.telegram.org/api](https://core.telegram.org/api)
-
-## 📄 Licencia
-
-MIT License
+✅ **COMPLETADO Y FUNCIONAL**
+- Monitor CLI operativo
+- Detección de URLs exitosa  
+- Interfaz web implementada
+- Arquitectura limpia y documentada
+- Pruebas realizadas con datos reales
 
 ---
 
-**¿Problemas?** Revisa la [documentación](docs/) o los issues del [repositorio original](https://github.com/chaindead/telegram-mcp/issues).
+*Desarrollado con ❤️ para el curso de Programación Asistido por IA*
