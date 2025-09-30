@@ -19,19 +19,66 @@ from pathlib import Path
 # ⚠️ IMPORTANTE: Define estas variables en tu archivo .env
 TG_APP_ID = os.getenv("TG_APP_ID")
 TG_API_HASH = os.getenv("TG_API_HASH")
+TG_PHONE = os.getenv("TG_PHONE")
 TARGET_CHAT = os.getenv("TARGET_CHAT")  # Formato: cht[CHAT_ID] o nombre del grupo
-
-# Validar que las credenciales estén configuradas
-if not TG_APP_ID or not TG_API_HASH:
-    print("❌ ERROR: TG_APP_ID y TG_API_HASH son requeridos")
-    print("📝 Crea un archivo .env basado en .env.example con tus credenciales")
-    exit(1)
-
-if not TARGET_CHAT:
-    print("❌ ERROR: TARGET_CHAT es requerido")
-    print("📝 Define TARGET_CHAT en tu archivo .env (formato: cht[ID] o nombre del grupo)")
-    exit(1)
 MONITORING_INTERVAL = int(os.getenv("MONITORING_INTERVAL", "60"))
+
+def check_configuration():
+    """Verificar si la configuración está completa"""
+    if not TG_APP_ID or not TG_API_HASH or not TG_PHONE:
+        print("❌ ERROR: TG_APP_ID, TG_API_HASH y TG_PHONE son requeridos")
+        print("📝 Crea un archivo .env basado en .env.example con tus credenciales")
+        return False
+
+    if not TARGET_CHAT:
+        print("❌ ERROR: TARGET_CHAT es requerido")
+        print("📝 Define TARGET_CHAT en tu archivo .env (formato: cht[ID] o nombre del grupo)")
+        return False
+    
+    return True
+
+def authenticate_mcp():
+    """Autenticar con MCP usando credenciales del .env"""
+    try:
+        import shutil
+        
+        # Verificar que npx esté disponible
+        npx_path = shutil.which("npx")
+        if not npx_path:
+            logger.error("❌ NPX no está disponible")
+            return False
+        
+        # Preparar comando de autenticación
+        cmd = [
+            npx_path, 
+            "-y", 
+            "@chaindead/telegram-mcp", 
+            "auth",
+            "--app-id", str(TG_APP_ID),
+            "--api-hash", str(TG_API_HASH),
+            "--phone", str(TG_PHONE)
+        ]
+        
+        logger.info(f"🔑 Ejecutando autenticación MCP...")
+        
+        # Ejecutar comando de autenticación
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=60  # Timeout de 60 segundos
+        )
+        
+        if result.returncode == 0:
+            logger.info("✅ Autenticación MCP exitosa")
+            return True
+        else:
+            logger.error(f"❌ Error en autenticación MCP: {result.stderr}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"❌ Excepción en autenticación MCP: {e}")
+        return False
 
 # Configurar logging
 logging.basicConfig(
@@ -47,10 +94,12 @@ logger = logging.getLogger(__name__)
 class SimpleTelegramMonitor:
     """Monitor simple de Telegram usando MCP"""
     
-    def __init__(self):
-        self.app_id = TG_APP_ID
-        self.api_hash = TG_API_HASH
-        self.target_chat = TARGET_CHAT
+    def __init__(self, app_id=None, api_hash=None, phone=None, target_chat=None):
+        # Usar parámetros o variables de entorno
+        self.app_id = app_id or TG_APP_ID
+        self.api_hash = api_hash or TG_API_HASH
+        self.phone = phone or TG_PHONE
+        self.target_chat = target_chat or TARGET_CHAT
         self.processed_messages = set()  # Para evitar duplicados
         
         # Crear directorio de resultados
@@ -59,6 +108,13 @@ class SimpleTelegramMonitor:
     def start_monitoring(self):
         """Inicia el monitoreo continuo"""
         logger.info("🚀 Iniciando monitoreo simple de Telegram")
+        
+        # Autenticar MCP automáticamente
+        logger.info("🔐 Autenticando con MCP...")
+        if not authenticate_mcp():
+            logger.error("❌ Falló la autenticación MCP. Abortando monitoreo.")
+            return
+        
         logger.info(f"🎯 Chat objetivo: {self.target_chat}")
         logger.info(f"⏰ Intervalo: {MONITORING_INTERVAL} segundos")
         
@@ -273,9 +329,181 @@ class SimpleTelegramMonitor:
             
         except Exception as e:
             logger.error(f"❌ Error procesando URL {url}: {e}")
+    
+    def get_available_chats(self) -> List[Dict[str, Any]]:
+        """Obtiene lista de chats disponibles usando MCP"""
+        try:
+            # Autenticar MCP automáticamente antes de listar chats
+            logger.info("🔐 Autenticando con MCP...")
+            if not authenticate_mcp():
+                logger.error("❌ Falló la autenticación MCP. No se pueden obtener chats.")
+                return []
+            
+            # Buscar npx
+            import shutil
+            npx_path = shutil.which("npx")
+            if not npx_path:
+                logger.error("❌ NPX no encontrado")
+                return []
+            
+            # Preparar entorno
+            env = os.environ.copy()
+            env.update({
+                "TG_APP_ID": self.app_id,
+                "TG_API_HASH": self.api_hash
+            })
+            
+            # Comando MCP
+            cmd = [npx_path, "@chaindead/telegram-mcp", "--app-id", self.app_id, "--api-hash", self.api_hash]
+            
+            # Ejecutar proceso MCP
+            process = subprocess.Popen(
+                cmd,
+                env=env,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            try:
+                # Inicializar protocolo MCP
+                init_msg = {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {"name": "chat-lister", "version": "1.0"}
+                    }
+                }
+                
+                process.stdin.write(json.dumps(init_msg) + '\n')
+                process.stdin.flush()
+                
+                # Leer respuesta de inicialización
+                init_response = process.stdout.readline()
+                if not init_response:
+                    logger.warning("⚠️ No se recibió respuesta de inicialización")
+                    return []
+                
+                # Solicitar lista de chats
+                chats_msg = {
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "tg_dialogs",
+                        "arguments": {}
+                    }
+                }
+                
+                process.stdin.write(json.dumps(chats_msg) + '\n')
+                process.stdin.flush()
+                
+                # Leer respuesta de chats
+                chats_response = process.stdout.readline()
+                if chats_response:
+                    # LOG: Ver respuesta cruda
+                    logger.info(f"🔍 Respuesta MCP cruda: {chats_response.strip()}")
+                    
+                    response_data = json.loads(chats_response.strip())
+                    
+                    # LOG: Ver datos parseados
+                    logger.info(f"🔍 Datos JSON parseados: {json.dumps(response_data, indent=2, ensure_ascii=False)}")
+                    
+                    if 'result' in response_data and response_data['result']:
+                        return self.parse_chats_response(response_data['result'])
+                    else:
+                        logger.info("📭 No se encontraron chats")
+                        return []
+                else:
+                    logger.warning("⚠️ No se pudo obtener lista de chats")
+                
+            finally:
+                process.stdin.close()
+                process.terminate()
+                process.wait(timeout=3)
+            
+            return []
+            
+        except Exception as e:
+            logger.error(f"❌ Error obteniendo chats: {e}")
+            return []
+    
+    def parse_chats_response(self, result_data) -> List[Dict[str, Any]]:
+        """Parsea la respuesta de chats del MCP"""
+        chats = []
+        
+        try:
+            # LOG: Ver estructura de result_data
+            logger.info(f"🔍 result_data recibido: {json.dumps(result_data, indent=2, ensure_ascii=False)}")
+            
+            # Manejar el formato de respuesta del MCP
+            if isinstance(result_data, dict) and 'content' in result_data:
+                logger.info(f"🔍 Procesando {len(result_data['content'])} items de contenido")
+                
+                for item in result_data['content']:
+                    logger.info(f"🔍 Item tipo: {item.get('type')}")
+                    
+                    if item.get('type') == 'text':
+                        try:
+                            # LOG: Ver texto antes de parsear
+                            logger.info(f"🔍 Texto a parsear: {item['text'][:200]}...")
+                            
+                            # Parsear el JSON interno
+                            chats_data = json.loads(item['text'])
+                            
+                            # LOG: Ver estructura de chats_data
+                            logger.info(f"🔍 chats_data keys: {list(chats_data.keys())}")
+                            
+                            if 'dialogs' in chats_data:
+                                logger.info(f"🔍 Encontrados {len(chats_data['dialogs'])} diálogos")
+                                
+                                for i, dialog in enumerate(chats_data['dialogs']):
+                                    # LOG: Ver diálogo crudo
+                                    logger.info(f"🔍 Diálogo {i+1} crudo: {json.dumps(dialog, indent=2, ensure_ascii=False)}")
+                                    
+                                    # Extraer ID desde el campo 'name' o usar título como fallback
+                                    chat_id = dialog.get('name')  # Para chats: "cht[ID]", para usuarios: "username" 
+                                    if not chat_id:
+                                        # Si no hay 'name', usar título como identificador
+                                        chat_id = dialog.get('title', 'unknown')
+                                    
+                                    chat_info = {
+                                        'id': chat_id,  # Usar el campo 'name' como ID
+                                        'title': dialog.get('title', 'Chat sin título'),
+                                        'type': dialog.get('type', 'unknown'),
+                                        'username': dialog.get('name') if dialog.get('type') == 'user' else None,  # Username para usuarios
+                                        'first_name': dialog.get('first_name'),
+                                        'last_name': dialog.get('last_name')
+                                    }
+                                    
+                                    # Log detallado para debuggear
+                                    logger.info(f"🔍 Chat parseado {i+1}: ID='{chat_info['id']}', Título='{chat_info['title']}', Tipo={chat_info['type']}, Username={chat_info.get('username', 'N/A')}")
+                                    
+                                    chats.append(chat_info)
+                            else:
+                                logger.warning("⚠️ No se encontró key 'dialogs' en chats_data")
+                            
+                        except json.JSONDecodeError as e:
+                            logger.error(f"❌ Error parseando JSON de chats: {e}")
+                            logger.error(f"❌ Texto problemático: {item.get('text', 'N/A')}")
+                            continue
+            
+            logger.info(f"📋 Se encontraron {len(chats)} chats disponibles")
+            return chats
+            
+        except Exception as e:
+            logger.error(f"❌ Error parseando respuesta de chats: {e}")
+            return []
 
 def main():
     """Función principal"""
+    if not check_configuration():
+        exit(1)
+    
     monitor = SimpleTelegramMonitor()
     monitor.start_monitoring()
 

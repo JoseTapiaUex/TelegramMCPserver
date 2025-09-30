@@ -7,11 +7,41 @@ Launcher principal para el sistema de monitoreo de Telegram
 import sys
 import subprocess
 import argparse
+import os
+from pathlib import Path
+
+def check_env_config():
+    """Verificar si la configuración está completa"""
+    env_file = Path('.env')
+    if not env_file.exists():
+        return False
+    
+    # Cargar variables de entorno
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        
+        required_vars = ['TG_APP_ID', 'TG_API_HASH', 'TG_PHONE', 'TARGET_CHAT']
+        
+        for var in required_vars:
+            if not os.getenv(var):
+                return False
+        
+        return True
+    except ImportError:
+        print("❌ Error: python-dotenv no está instalado")
+        return False
 
 def run_cli_monitor():
     """Ejecutar monitor en modo consola"""
     print("🤖 Iniciando Telegram Monitor - Modo CLI")
     print("📡 Monitoreo en consola sin interfaz web")
+    
+    # Verificar configuración
+    if not check_env_config():
+        print("❌ Configuración incompleta. Usa modo web (--web) para configurar.")
+        return
+    
     print("🔄 Presiona Ctrl+C para detener\n")
     
     try:

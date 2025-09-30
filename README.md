@@ -49,13 +49,20 @@ npm install -g @chaindead/telegram-mcp
 
 ### 3. Configurar credenciales
 
-Crear archivo `.env`:
+Crear archivo `.env` basado en `.env.example`:
 ```bash
-TG_APP_ID=1234567
-TG_API_HASH=abcd1234efgh5678ijkl9012mnop3456
-TARGET_CHAT=cht[4945424696]
+# Copiar el archivo de ejemplo
+cp .env.example .env
+
+# Editar con tus credenciales reales
+TG_APP_ID=TU_API_ID_AQUI
+TG_API_HASH=TU_API_HASH_AQUI
+TG_PHONE=+34XXXXXXXXX
+TARGET_CHAT=cht[ID_DEL_CHAT]
 MONITORING_INTERVAL=60
 ```
+
+> ⚠️ **IMPORTANTE**: Obtén tus credenciales en https://my.telegram.org/apps
 
 ## 💻 Uso
 
@@ -88,9 +95,9 @@ python web_server.py
 
 | Variable | Descripción | Valor por Defecto |
 |----------|-------------|-------------------|
-| `TG_APP_ID` | ID de la aplicación Telegram | `1234567` |
+| `TG_APP_ID` | ID de la aplicación Telegram | `TU_API_ID` |
 | `TG_API_HASH` | Hash API de Telegram | `4b525537a...` |
-| `TARGET_CHAT` | ID del chat a monitorear | `cht[4945424696]` |
+| `TARGET_CHAT` | ID del chat a monitorear | `cht[CHAT_ID]` |
 | `MONITORING_INTERVAL` | Intervalo en segundos | `60` |
 
 ## 📁 Archivos Generados
@@ -103,7 +110,7 @@ python web_server.py
   "date": "2025-09-30 20:33:15",
   "from": "usuario",
   "urls": ["https://x.com/OpenAI/status/1973071069016641829"],
-  "chat": "cht[4945424696]"
+  "chat": "cht[CHAT_ID]"
 }
 ```
 
