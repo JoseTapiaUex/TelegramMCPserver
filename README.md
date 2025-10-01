@@ -99,8 +99,8 @@ telegram-monitor-agent/
 ### 2. Clonar y configurar
 ```bash
 # Clonar el repositorio
-git clone https://github.com/JoseTapiaUex/telegram-monitor-agent.git
-cd telegram-monitor-agent
+git clone https://github.com/JoseTapiaUex/Telegram-monitor-agent.git
+cd Telegram-monitor-agent
 
 # Crear entorno virtual (recomendado)
 python -m venv .venv
