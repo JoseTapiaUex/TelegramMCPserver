@@ -10,7 +10,10 @@ from flask_cors import CORS
 import json
 import logging
 import os
+import shutil
+import subprocess
 import threading
+import time
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv, set_key
@@ -77,9 +80,6 @@ def ensure_mcp_authentication():
 def authenticate_telegram_mcp(api_id, api_hash, phone):
     """Autenticar con el servidor MCP de Telegram"""
     try:
-        import shutil
-        import subprocess
-        
         # Verificar que npx esté disponible
         npx_path = shutil.which("npx")
         if not npx_path:

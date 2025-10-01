@@ -1,7 +1,9 @@
 # 🤖 Telegram Monitor - Agente de Monitoreo Inteligente
 
 > **Proyecto desarrollado para curso de Programación Asistido por IA**  
-> Monitor automático de chats de Telegram con detección de## 📊 Estructura de Datos
+> Monitor automático de chats de Telegram con detección de URLs y contenido
+
+## 📊 Estructura de Datos
 
 ### 📁 Archivos Generados
 ```
@@ -55,9 +57,9 @@ results/
 
 ---
 
-*💡 Desarrollado con ❤️ para el curso de **Programación Asistido por IA***
+*💡 Desarrollado con ❤️ para el curso de **Programación Asistida por IA***
 
-🎯 **Demo funcional**: `python run.py --web` → http://localhost:5000 contenido
+🎯 **Demo funcional**: `python run.py --web` → http://localhost:5000
 
 ## 🎯 Características Principales
 
