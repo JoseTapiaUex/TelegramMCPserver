@@ -1,56 +1,21 @@
-# 🐍 Python Dependencies para Telegram Monitor Agent
+# 🐍 Dependencias Esenciales para Telegram Monitor Agent
 
-# 🌐 Web Framework y API
+# 🌐 Web Framework y API (ESENCIAL)
 flask==3.0.0
 flask-cors==4.0.0
 requests==2.31.0
 
-# 🗄️ Base de Datos
-# sqlite3 - Incluido en Python estándar
-
-# 🤖 IA y Procesamiento de Lenguaje Natural
-openai==1.12.0
+# � Procesamiento Web (ESENCIAL para URLs)
 beautifulsoup4==4.12.2
-lxml==4.9.3
 
-# 🔧 Utilidades Web
-html5lib==1.1
-pillow==10.2.0
-urllib3==2.2.1
-
-# 📊 Procesamiento de Datos
-python-dateutil==2.8.2
-pytz==2024.1
-
-# 🔍 Web Scraping Avanzado
-selenium==4.16.0  # Para sitios con JavaScript (opcional)
-fake-useragent==1.4.0
-
-# 📝 Logging y Configuración
+# � Configuración (ESENCIAL)
 python-dotenv==1.0.0
-colorama==0.4.6  # Para logs coloridos en Windows
 
-# 🔄 Programación Asíncrona
-# asyncio - Incluido en Python estándar
-aiohttp==3.9.1
+# 📊 Fechas y Tiempo (ÚTIL para timestamps)
+python-dateutil==2.8.2
 
-# 🧪 Testing (desarrollo)
-pytest==7.4.4
-pytest-asyncio==0.21.1
+# 🎨 Terminal Windows (ÚTIL para logs coloridos)
+colorama==0.4.6
 
-# 📦 Cliente MCP (para comunicación con servidor Telegram)
-# Nota: Se usará subprocess para comunicarse con npx @chaindead/telegram-mcp
-
-# 🛡️ Seguridad
+# �️ Seguridad (AUTO-instalado con requests)
 certifi==2024.2.2
-
-# 📅 Manejo de Fechas y Tiempo
-arrow==1.3.0
-
-# 🔗 URL Processing
-validators==0.22.0
-tldextract==5.1.1
-
-# 📸 Procesamiento de Imágenes
-imageio==2.33.1
-numpy==1.26.3  # Para procesamiento de imágenes con Pillow

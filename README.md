@@ -103,13 +103,22 @@ git clone https://github.com/JoseTapiaUex/Telegram-monitor-agent.git
 cd Telegram-monitor-agent
 
 # Crear entorno virtual (recomendado)
+# Opción 1 - Con uv (más rápido):
+uv venv .venv
+
+# Opción 2 - Con Python estándar:
 python -m venv .venv
+
+# Activar entorno virtual
 # Windows:
 .venv\Scripts\activate
 # Linux/Mac:
 source .venv/bin/activate
 
-# Instalar dependencias
+# Instalar dependencias (solo 8 paquetes esenciales)
+# Con uv (recomendado):
+uv pip install -r requirements.txt
+# Con pip estándar:
 pip install -r requirements.txt
 
 # Instalar MCP server de Telegram

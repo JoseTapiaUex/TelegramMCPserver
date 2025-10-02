@@ -147,28 +147,38 @@ class WebTelegramMonitor(SimpleTelegramMonitor):
     
     def process_messages(self, messages):
         """Override para actualizar datos para la web"""
+        if not messages:
+            return
+            
+        # Procesar mensajes con la lógica padre (guardar archivos JSON, etc.)
         super().process_messages(messages)
         
-        # Actualizar datos para la interfaz web
-        self.latest_messages = messages[-10:]  # Últimos 10 mensajes
+        # SIEMPRE actualizar con los mensajes más recientes
+        self.latest_messages = messages[-10:] if len(messages) > 10 else messages
         
-        # Extraer URLs recientes
-        urls = []
+        # Extraer y actualizar URLs recientes
+        all_urls = []
         for msg in messages:
-            for url in msg.get('urls', []):
-                urls.append({
+            urls_in_msg = msg.get('urls', [])
+            for url in urls_in_msg:
+                all_urls.append({
                     'url': url,
-                    'from': msg['from'],
-                    'date': msg['date'],
-                    'message_text': msg['text'][:100] + '...' if len(msg['text']) > 100 else msg['text']
+                    'from': msg.get('from', 'unknown'),
+                    'date': msg.get('date', ''),
+                    'message_text': msg.get('text', '')[:100] + '...' if len(msg.get('text', '')) > 100 else msg.get('text', '')
                 })
-        self.latest_urls = urls[-20:]  # Últimas 20 URLs
+        
+        # Mantener las últimas 20 URLs (combine con las existentes si es necesario)
+        if all_urls:
+            self.latest_urls = all_urls[-20:] if len(all_urls) > 20 else all_urls
         
         # Actualizar estadísticas
-        self.stats['total_messages'] += len(messages)
-        self.stats['total_urls'] += len(urls)
+        self.stats['total_messages'] = len(messages)
+        self.stats['total_urls'] = len(all_urls)
         self.stats['last_check'] = datetime.now().isoformat()
         self.stats['status'] = 'running'
+        
+        logger.info(f"📊 Actualizados: {len(messages)} mensajes, {len(all_urls)} URLs")
 
     def start_monitoring_web(self):
         """Versión del monitoreo para uso web (sin loop infinito)"""
@@ -214,13 +224,39 @@ def get_status():
 
 @app.route('/api/messages')
 def get_messages():
-    """Obtener mensajes recientes"""
-    global monitor
-    
-    if not monitor:
+    """Obtener mensajes recientes desde archivos JSON - TODOS los mensajes"""
+    try:
+        messages = []
+        results_dir = Path('results')
+        
+        if results_dir.exists():
+            # Leer TODOS los archivos de mensajes para obtener las fechas reales
+            for file_path in results_dir.glob('message_*.json'):
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        message_data = json.load(f)
+                        # Agregar solo si el mensaje tiene fecha válida
+                        if message_data.get('date'):
+                            # Asegurar que URLs existe (aunque sea vacía)
+                            if 'urls' not in message_data:
+                                message_data['urls'] = []
+                            messages.append(message_data)
+                except Exception as e:
+                    logger.warning(f"⚠️ Error leyendo {file_path}: {e}")
+                    continue
+        
+        # Ordenar mensajes por fecha real del contenido (más recientes primero)  
+        messages.sort(key=lambda x: x.get('date', ''), reverse=True)
+        
+        # Log para debug
+        if messages:
+            logger.info(f"📱 Devolviendo {len(messages[:15])} mensajes, más reciente: {messages[0].get('date')} de {messages[0].get('from')}")
+        
+        return jsonify(messages[:15])  # Retornar los 15 más recientes por fecha de contenido
+        
+    except Exception as e:
+        logger.error(f"❌ Error obteniendo mensajes: {e}")
         return jsonify([])
-    
-    return jsonify(monitor.latest_messages)
 
 @app.route('/api/urls')
 def get_urls():
@@ -229,6 +265,15 @@ def get_urls():
     
     if not monitor:
         return jsonify([])
+    
+    # Si no tenemos URLs cacheadas, intentar obtener mensajes frescos
+    if not monitor.latest_urls:
+        try:
+            fresh_messages = monitor.get_messages_from_chat()
+            if fresh_messages:
+                monitor.process_messages(fresh_messages)
+        except Exception as e:
+            logger.error(f"❌ Error obteniendo URLs frescas: {e}")
     
     return jsonify(monitor.latest_urls)
 
@@ -595,4 +640,4 @@ if __name__ == '__main__':
             print(f"⚠️ Advertencia de autenticación MCP: {auth_message}")
             print("🔗 Dashboard disponible en: http://localhost:5000 (con limitaciones)")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)
