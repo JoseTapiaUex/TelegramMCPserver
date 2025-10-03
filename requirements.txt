@@ -1,21 +1,9 @@
-# 🐍 Dependencias Esenciales para Telegram Monitor Agent
-
-# 🌐 Web Framework y API (ESENCIAL)
 flask==3.0.0
 flask-cors==4.0.0
 requests==2.31.0
-
-# � Procesamiento Web (ESENCIAL para URLs)
 beautifulsoup4==4.12.2
-
-# � Configuración (ESENCIAL)
+readability-lxml==0.9.1
+lxml==4.9.3
 python-dotenv==1.0.0
-
-# 📊 Fechas y Tiempo (ÚTIL para timestamps)
-python-dateutil==2.8.2
-
-# 🎨 Terminal Windows (ÚTIL para logs coloridos)
-colorama==0.4.6
-
-# �️ Seguridad (AUTO-instalado con requests)
-certifi==2024.2.2
+openai>=1.10.0
+pydantic>=2.5.0
