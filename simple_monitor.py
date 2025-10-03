@@ -38,7 +38,7 @@ def check_configuration():
     return True
 
 def authenticate_mcp():
-    """Autenticar con MCP usando credenciales del .env"""
+    """Autenticar con MCP usando credenciales del .env (función global para compatibilidad)"""
     try:
         import shutil
         
@@ -105,13 +105,56 @@ class SimpleTelegramMonitor:
         # Crear directorio de resultados
         os.makedirs("results", exist_ok=True)
     
+    def authenticate_mcp_instance(self):
+        """Autenticar con MCP usando credenciales del objeto"""
+        try:
+            import shutil
+            
+            # Verificar que npx esté disponible
+            npx_path = shutil.which("npx")
+            if not npx_path:
+                logger.error("❌ NPX no está disponible")
+                return False
+            
+            # Preparar comando de autenticación usando parámetros del objeto
+            cmd = [
+                npx_path, 
+                "-y", 
+                "@chaindead/telegram-mcp", 
+                "auth",
+                "--app-id", str(self.app_id),
+                "--api-hash", str(self.api_hash),
+                "--phone", str(self.phone)
+            ]
+            
+            logger.info(f"🔑 Ejecutando autenticación MCP...")
+            
+            # Ejecutar comando de autenticación
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=60  # Timeout de 60 segundos
+            )
+            
+            if result.returncode == 0:
+                logger.info("✅ Autenticación MCP exitosa")
+                return True
+            else:
+                logger.error(f"❌ Error en autenticación MCP: {result.stderr}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Excepción en autenticación MCP: {e}")
+            return False
+    
     def start_monitoring(self):
         """Inicia el monitoreo continuo"""
         logger.info("🚀 Iniciando monitoreo simple de Telegram")
         
         # Autenticar MCP automáticamente
         logger.info("🔐 Autenticando con MCP...")
-        if not authenticate_mcp():
+        if not self.authenticate_mcp_instance():
             logger.error("❌ Falló la autenticación MCP. Abortando monitoreo.")
             return
         
@@ -335,7 +378,7 @@ class SimpleTelegramMonitor:
         try:
             # Autenticar MCP automáticamente antes de listar chats
             logger.info("🔐 Autenticando con MCP...")
-            if not authenticate_mcp():
+            if not self.authenticate_mcp_instance():
                 logger.error("❌ Falló la autenticación MCP. No se pueden obtener chats.")
                 return []
             
